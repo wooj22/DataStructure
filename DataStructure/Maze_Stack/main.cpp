@@ -1,27 +1,28 @@
 #include <iostream>
 #include <stack>
-#include <string>
+#include <vector>
 using namespace std;
 
 #define MAX 10
 
-struct Position
-{
-	int x, y;
+// position
+struct Position 
+{ 
+    int x, y; 
 };
 
-enum EMAZETYPE { PATH, WALL, VISIT, BACK };
-/*
-0 -> PATH : 방문하지 않은 위치
-1 -> WALL : 이동할 수 없는 벽
-2 -> VISIT : 한번 방문한곳
-3 -> BACK : 방문하고 되돌아간 곳
+/*  // 표시 의미
+    0 -> " " : 방문하지 않은 곳
+    1 -> # : 이동할 수 없는 벽
+    2 -> V : 한번 방문한 곳
+    3 -> B : 방문하고 되돌아간 곳
 */
+enum EMAZETYPE { PATH, WALL, VISIT, BACK };
 
-// 미로 맵 - 출구 : Maze[9][9] 
+// map
 int Maze[MAX][MAX] = {
 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-{1, 2, 0, 0, 1, 0, 1, 1, 0, 1},
+{1, 0, 0, 0, 1, 0, 1, 1, 0, 1},
 {1, 0, 1, 1, 1, 0, 1, 1, 0, 1},
 {1, 0, 0, 0, 0, 0, 0, 1, 0, 1},
 {1, 0, 1, 1, 0, 0, 0, 0, 0, 1},
@@ -32,101 +33,71 @@ int Maze[MAX][MAX] = {
 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
 };
 
+// Show
 void Show()
 {
-	for (int i = 0; i < MAX; i++)
-	{
-		for (int j = 0; j < MAX; j++)
-		{
-			int n = Maze[i][j];
-
-			switch (n)
-			{
-			case PATH:
-				cout << "  ";
-				break;
-			case WALL:
-				cout << "■";
-				break;
-			case VISIT:
-				cout << "V ";
-				break;
-			case BACK:
-				cout << "B ";
-				break;
-			default:
-				break;
-			}
-		}
-		cout << endl;
-	}
+    for (int i = 0; i < MAX; i++)
+    {
+        for (int j = 0; j < MAX; j++)
+        {
+            int n = Maze[i][j];
+            switch (n)
+            {
+            case PATH:  cout << "  "; break;
+            case WALL:  cout << "■"; break;
+            case VISIT: cout << "V "; break;
+            case BACK:  cout << "B "; break;
+            default: break;
+            }
+        }
+        cout << endl;
+    }
 }
 
-bool Move(Position &pos, stack<Position> &s)
+// Move
+bool Move(Position& pos, stack<Position>& moveStack)
 {
-	// check
-	s.push(pos);
-	int p = Maze[pos.x][pos.y];
+    int go = Maze[pos.x][pos.y];
 
-	switch (p)
-	{
-	case PATH:
-		Maze[pos.x][pos.y] = VISIT;
-		break;
-	case WALL:
-		s.pop();
-		break;
-	case VISIT:
-		Maze[pos.x][pos.y] = BACK;
-		break;
-	case BACK:
-		break;
-	default:
-		break;
-	}
-	
-	// final pos
-	pos = s.top();
+    // Back
+    if (go == WALL || go == VISIT || go == BACK) return false;
 
-	// show
-	Show();
+    // move
+    moveStack.push(pos);
+    Maze[pos.x][pos.y] = VISIT;
 
-	// goal
-	if (pos.x == 8 && pos.y == 8) return true;
-	else return false;
+    // goal
+    if (pos.x == 8 && pos.y == 8) return true;
+
+    // 탐색 - 상, 우, 하, 좌
+    int xPos[4] = { -1, 0, 1, 0 };
+    int yPos[4] = { 0, 1, 0, -1 };
+    for (int i = 0; i < 4; i++)
+    {
+        Position next = { pos.x + xPos[i], pos.y + yPos[i] };
+        if (Move(next, moveStack)) return true;
+        Show();
+    }
+
+    // Back - 4 방향 모두 이동 불가
+    Maze[pos.x][pos.y] = BACK;
+    moveStack.pop();
+    return false;
 }
 
 int main()
 {
-	// data
-	stack<Position> s;
-	bool isGoal = false;
-	string input;
+    stack<Position> moveStack;
+    Position start = { 1, 1 };
 
-	// init
-	Position pos = { 1, 1 };
-	s.push(pos);
-	Show();
-
-	// play
-	while (!isGoal)
-	{
-		// input
-		cout << "이동 방향을 입력해주세요 (WASD) : ";
-		cin >> input;
-		if (input == "w" || input == "W") pos.x--;
-		else if (input == "s" || input == "S") pos.x++;
-		else if (input == "a" || input == "A") pos.y--;
-		else if (input == "d" || input == "D") pos.y++;
-		else {
-			cout << "잘못된 입력입니다. 다시 입력해주세요." << endl;
-			continue;
-		}
-
-		// move
-		isGoal = Move(pos, s);
-	}
-
-	// goal
-	cout << "미로 탈출에 성공하셨습니다.";
+    if (Move(start, moveStack))
+    {
+        Show();
+        cout << "미로 탈출에 성공하셨습니다. 이동 경로를 출력합니다." << endl;
+        while (!moveStack.empty())
+        {
+            cout << "[" << moveStack.top().x << ", " << moveStack.top().y << "] ";
+            moveStack.pop();
+        }
+    }
 }
