@@ -51,72 +51,74 @@ void Show()
             int n = Maze[i][j];
             if (n == PATH) cout << "  ";
             else if (n == WALL) cout << "■";
-            else cout << setw(2) << n;  // 방문한 칸은 level 출력
+            else cout << setw(2) << n;          // 방문한 칸은 level 출력
         }
         cout << endl;
     }
 }
 
-
 // Move BFS - 너비 우선 탐색
-bool MoveBFS(Position startPos, int& level, queue<Position>& moveQueue, vector<Position>& visit_result)
+int MoveBFS(Position startPos, int startlevel, queue<Node>& moveQueue, vector<Node>& visit_result)
 {
-    Position curPos;                        // 현재 방문한 위치
-    Position adjacentPos;                   // 인접한 위치
-    bool visited[MAX][MAX] = { false };     // 방문 여부
-    int xPos[4] = { -1, 0, 1, 0 };
+    bool visited[MAX][MAX] = { false };     // 방문여부
+    int xPos[4] = { -1, 0, 1, 0 };          // 인접 노드 좌표
     int yPos[4] = { 0, 1, 0, -1 };
 
-    // init
-    moveQueue.push(startPos);
+    // start init
+    moveQueue.push({ startPos.x, startPos.y, 0 });
+    visited[startPos.x][startPos.y] = true;
 
     // 탐색
     while (!moveQueue.empty())
     {
-        // 위치 방문
-        curPos = moveQueue.front();
+        // 방문
+        Node cur = moveQueue.front();
         moveQueue.pop();
-        visited[curPos.x][curPos.y] = true;
-        visit_result.push_back(curPos);
- 
+        visit_result.push_back(cur);
+
         // map에 level 기록
-        Maze[curPos.x][curPos.y] = level;
+        Maze[cur.position.x][cur.position.y] = cur.level+ startlevel;  // map에서 0, 1 사용중이라서
         Show();
 
-        // 도착 cheak
-        if (curPos == goal) return true;
+        // 도착 check
+        if (cur.position == goal) return cur.level;
 
         // 인접 위치 push
         for (int i = 0; i < 4; i++)
         {
-            adjacentPos = { curPos.x + xPos[i], curPos.y + yPos[i] };
-            int map = Maze[adjacentPos.x][adjacentPos.y];
-            if (map == PATH) moveQueue.push(adjacentPos);
-        }
+            int nx = cur.position.x + xPos[i];
+            int ny = cur.position.y + yPos[i];
 
-        level++;
+            if (!visited[nx][ny] && Maze[nx][ny] == PATH) 
+            {
+                visited[nx][ny] = true;
+                moveQueue.push({ nx, ny, cur.level + 1 });
+            }
+        }
     }
 
-    return false;
+    return -1;
 }
 
 int main()
 {
-    queue<Position> moveQueue;
-    vector<Position> visit;
-    int level = 0;
+    queue<Node> moveQueue;
+    vector<Node> visit_result;
+    int startLevel = 10;
+    int level;
 
     // start
     Position start = { 1,1, };
-    if (MoveBFS(start, level, moveQueue, visit))
+    level = MoveBFS(start, startLevel, moveQueue, visit_result);
+    if (level != -1)
     {
         Show();
         cout << "미로 탈출에 성공하셨습니다." << endl;
         cout << "Level : " << level << endl;
         cout << "최단 경로 : " << endl;
-        for (auto pos : visit)
+        for (auto pos : visit_result)
         {
-            cout << "(" << pos.x << ", " << pos.y << ") ";
+            cout << "(" << pos.position.x << ", " << pos.position.y << ") ";
         }
     }
     else
