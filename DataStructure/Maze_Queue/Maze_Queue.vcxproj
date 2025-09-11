@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{e96aedd6-eb3f-4747-90ea-8011af670111}</ProjectGuid>
-    <RootNamespace>DataStructure</RootNamespace>
+    <ProjectGuid>{ca4bd6db-db6a-4efc-8630-483e3348b6e7}</ProjectGuid>
+    <RootNamespace>MazeQueue</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
