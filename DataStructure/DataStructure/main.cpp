@@ -1,46 +1,24 @@
 #include <iostream>
-#include <stack>
+#include <queue>
 #include <vector>
 using namespace std;
 
 int main() {
-	// input
-	int n; cin >> n;
-	
-	vector<int> inputs(n);
-	for (int& n : inputs) cin >> n;
+	std::priority_queue<int, std::vector<int>, std::greater<int>> max_priority_queue;
 
-	// process
-	stack<int> stack;
-	vector<int> result;
-	int curIndex = 0;
-	int curValue;
-	int curLeftMax = -1;
-	
-	for (int i = 0; i < n; i++)
+	max_priority_queue.push(13);
+	max_priority_queue.push(6);
+	max_priority_queue.push(1);
+	max_priority_queue.push(24);
+	max_priority_queue.push(50);
+
+	cout << max_priority_queue.top();
+
+	vector<int> test(10);
+	for (auto n : test)
 	{
-		curValue = inputs[curIndex];
-
-		// 오른쪽 큰 수 모두 담기
-		for (int j = i+1; j < n; j++)
-		{
-			if (curValue < inputs[j]) stack.push(inputs[j]);
-		}
-
-		// 큰 수중 가장 왼쪽 값 담기
-		while (!stack.empty())
-		{
-			curLeftMax = stack.top();
-			stack.pop();
-		}
-
-		// result
-		result.push_back(curLeftMax);
-		curLeftMax = -1;
+		cout << n;
 	}
 
-	for (auto n : result)
-	{
-		cout << n << " ";
-	}
+	cout << test[2];
 }

@@ -114,8 +114,8 @@ int main()
     {
         Show();
         cout << "미로 탈출에 성공하셨습니다." << endl;
-        cout << "Level : " << level << endl;
-        cout << "최단 경로 : " << endl;
+        cout << "최단 거리 : " << level << endl;
+        cout << "이동 경로 : " << endl;
         for (auto pos : visit_result)
         {
             cout << "(" << pos.position.x << ", " << pos.position.y << ") ";
