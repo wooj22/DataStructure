@@ -14,7 +14,7 @@ struct Position
 };
 
 // Node
-struct Node
+struct Vertex
 {
     Position position;
     int level;
@@ -58,7 +58,7 @@ void Show()
 }
 
 // Move BFS - 너비 우선 탐색
-int MoveBFS(Position startPos, int startlevel, queue<Node>& moveQueue, vector<Node>& visit_result)
+int MoveBFS(Position startPos, int startlevel, queue<Vertex>& moveQueue, vector<Vertex>& visit_result)
 {
     bool visited[MAX][MAX] = { false };     // 방문여부
     int xPos[4] = { -1, 0, 1, 0 };          // 인접 노드 좌표
@@ -72,7 +72,7 @@ int MoveBFS(Position startPos, int startlevel, queue<Node>& moveQueue, vector<No
     while (!moveQueue.empty())
     {
         // 방문
-        Node cur = moveQueue.front();
+        Vertex cur = moveQueue.front();
         moveQueue.pop();
         visit_result.push_back(cur);
 
@@ -102,8 +102,8 @@ int MoveBFS(Position startPos, int startlevel, queue<Node>& moveQueue, vector<No
 
 int main()
 {
-    queue<Node> moveQueue;
-    vector<Node> visit_result;
+    queue<Vertex> moveQueue;
+    vector<Vertex> visit_result;
     int startLevel = 10;
     int level;
 

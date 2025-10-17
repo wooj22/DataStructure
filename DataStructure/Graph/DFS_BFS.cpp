@@ -60,8 +60,10 @@ void BFS(int start) {
 }
 
 int main() {
+    // 정점 개수, 간선 개수, 시작 정점 입력
     cin >> N >> M >> V;
 
+    // 간선 정보 입력
     for (int i = 0; i < M; i++) {
         int a, b;
         cin >> a >> b;

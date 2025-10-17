@@ -79,7 +79,7 @@ int main()
     } 
 
     // 결과(us, 마이크로초 단위)
-    cout << endl << endl << "정렬 시간 >>" << endl;
+    cout << endl << endl << "---- 정렬 시간 -----" << endl;
     cout << "역순 배열 정렬 시간: " << CheckSortingTime(reverseArr) << "us" << endl;
     cout << "부분 정렬 배열 정렬 시간: " << CheckSortingTime(halfSortedArr) << "us" << endl;
 
