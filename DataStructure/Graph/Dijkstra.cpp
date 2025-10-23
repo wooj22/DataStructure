@@ -13,7 +13,12 @@ struct Vertex {
 struct Graph {
     vector<Vertex> vertexs;
 
-    explicit Graph(int n) : vertexs(n) {}
+    explicit Graph(int n) : vertexs(n + 1)
+    {
+        // 0번 인덱스 사용 x
+        for (int i = 1; i < vertexs.size(); ++i)
+            vertexs[i].data = i;
+    }
 
     // 정점 설정
     void SetNode(int i, int d)
@@ -121,14 +126,7 @@ struct Graph {
 };
 
 int main() {
-    Graph graph(6); // 0~5
-
-    // 정점
-    graph.SetNode(1, 1);
-    graph.SetNode(2, 2);
-    graph.SetNode(3, 3);
-    graph.SetNode(4, 4);
-    graph.SetNode(5, 5);
+    Graph graph(5); // 1,2,3,4,5
 
     // 간선
     graph.AddDirectedEdge(1, 2, 8);
