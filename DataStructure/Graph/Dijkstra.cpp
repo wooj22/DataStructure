@@ -53,7 +53,7 @@ struct Graph {
         3. 우선순위 큐에 꺼낸 정점의 인접 정점들을 탐색한다. ‘현재 거리 + 인접 정점까지의 거리’가 최단 거리 배열에 저장되어있는 값보다 작다면 최단 경로 갱신으로 배열에 ‘현재 거리 + 인접 정점까지의 거리’를 기록하고 갱신된 인접 정점을 우선순위 큐에 추가한다.
         4. 우선순위 큐가 빌때까지 2~3번 과정을 반복한다. 알고리즘이 종료되면 최단 거리 배열 dist[]에는 시작 정점으로부터 각 정점까지의 최단 거리가 저장되어있다.
     */
-    void Dijkstra(int start) {
+    void Astar(int start) {
         const int INF = 1e9;
 
         // 1. start init
@@ -138,7 +138,7 @@ int main() {
     graph.PrintGraphNodeAndEdge();
 
     // 최단 경로 알고리즘
-    graph.Dijkstra(1);
+    graph.Astar(1);
 
     return 0;
 }
