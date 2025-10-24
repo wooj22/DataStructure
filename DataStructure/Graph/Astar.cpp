@@ -36,7 +36,7 @@ struct Position
     bool operator==(Position& p) { return (x == p.x && y == p.y); }
     friend  ostream& operator<<(ostream& os, const Position& p)
     {
-        os << "{" << p.y << ", " << p.x << "}";
+        os << "{" << p.x << ", " << p.y << "}";
         return os;
     }
 };
