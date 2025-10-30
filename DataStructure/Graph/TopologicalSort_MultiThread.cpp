@@ -230,7 +230,7 @@ void SingleRun(TaskGraph* taskGraph)
 
 int MultiRun(TaskGraph* taskGraph)
 {
-	cout << "5개 작업을 3개의 스레드로 위상 정렬하여 처리합니다" << endl;
+	cout << "5개 작업을 위상 정렬하여 3개의 스레드로 처리합니다" << endl;
 
 	// critical section
 	InitializeCriticalSection(&cs);
@@ -305,7 +305,7 @@ int main()
 	//SingleRun(&taskGraph);
 
 	// 2. 멀티 스레드 작업 스케줄링
-	if (MultiRun(&taskGraph) == -1) return -1;;
+	if (MultiRun(&taskGraph) == -1) return -1;
 
 	return 0;
 }
