@@ -24,6 +24,9 @@
     <ClCompile Include="Dijkstra11779.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="TopologicalSort_MultiThread.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
     <ClCompile Include="Astar.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
