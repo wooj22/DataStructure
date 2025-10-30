@@ -9,11 +9,36 @@ using namespace std;
 
 
 /*
-	[위상 정렬, 멀티스레드를 활용한 Task 스케줄링]
+	[위상 정렬, 병렬 처리를 활용한 Task 스케줄링]
+
+	TaskGrap(DAG)
+	- 의존관계(간선)을 추가할때마다 사이클이 발생하지 않는지 검사하여
+	  DAG 구조의 TaskGrap를 생성합니다.
+
+	위상 정렬
+	- 칸 알고리즘으로 진입차수가 0인 Task를 차례대로 처리하여
+	  의존성을 해치지 않으면서 순서대로 작업을 처리합니다.
 	
-	Critical Section, Event(수동), Interlocked를 사용해 
-	큐 버퍼와 inDegree, tasksRemaining를 동기화하여
-	3개의 스레드로 Task를 병렬처리합니다.
+	병렬 처리
+	- Critical Section, Manual-reset Event, Interlocked, volatile을 이용하여
+      스레드 간 동기화를 수행합니다.
+    - 여러 스레드가 동시에 큐에서 Task를 꺼내 병렬로 처리합니다.
+	  
+	  1) Critical Section
+         - 큐 버퍼에 Task를 추가하거나 제거할 때 단일 스레드만 접근하도록 보호합니다.
+
+      2) Event (Manual-reset, 수동 리셋)
+         - 큐가 비어있을 경우 모든 스레드가 WaitForSingleObject()로 대기하도록 합니다.
+         - 새로운 Task가 큐에 추가되면 SetEvent()를 호출해 스레드를 깨웁니다.
+         - 큐가 다시 비게 되면 ResetEvent()를 호출해 스레드들을 다시 대기 상태로 만듭니다.
+
+      3) Interlocked
+         - inDegree 감소나 남은 Task 수(tasksRemaining) 감소 등의 연산을
+           원자적으로 수행하여 경쟁 상태(Race Condition)를 방지합니다.
+
+      4) volatile
+         - 컴파일러의 최적화로 인한 값 캐싱을 방지하여,
+           다른 스레드가 갱신한 변수를 항상 메모리에서 읽도록 보장합니다.
 */
 
 
@@ -50,7 +75,7 @@ struct TaskGraph
 		nodes[u].next.push_back(v);	
 		nodes[v].inDegree++;	
 
-		// Cycle Cheak
+		// 사이클 발생 검사
 		vector<int> visited(nodes.size(), 0);
 		for (int i = 0; i < (int)nodes.size(); ++i)
 		{
@@ -68,12 +93,15 @@ struct TaskGraph
 	// Cycle Cheak (DFS)
 	bool HasCycleDFS(int node, vector<TaskNode>& nodes, vector<int>& visited)
 	{
-		visited[node] = 1; // 현재 경로에 있음
+		visited[node] = 1;    // 현재 경로에 있음
 
 		for (int next : nodes[node].next)
 		{
+			// 1) node가 방문중인 노드라면 사이클 발생
 			if (visited[next] == 1)
-				return true; // 현재 경로 안에서 다시 방문됨 → 사이클
+				return true;
+
+			// 2) node가 아직 미방문 노드라면 후속 노드 탐색 시작
 			if (visited[next] == 0 && HasCycleDFS(next, nodes, visited))
 				return true;
 		}
@@ -85,17 +113,22 @@ struct TaskGraph
 	// 단일 스레드 스케줄링
 	void SigleThreadScheduling()
 	{
+		// 초기 task 추가
 		for (int i = 0; i < nodes.size(); ++i)
 			if (nodes[i].inDegree == 0) ready_queue.push(i);
 
 		while (!ready_queue.empty())
 		{
+			// 큐에서 task 추출, 실행
 			int nodeIndex = ready_queue.front();  ready_queue.pop();
 			nodes[nodeIndex].task();
 
+			// 후속노드 진입차수 감소
 			for (int next : nodes[nodeIndex].next)
 			{
 				nodes[next].inDegree--;
+
+				// 만약 진입차수가 0이라면 큐에 추가
 				if (nodes[next].inDegree == 0)
 					ready_queue.push(next);
 			}
@@ -105,8 +138,10 @@ struct TaskGraph
 	// 멀티 스레드 스케줄링을 위한 초기화
 	void MultiThreadSchedulingInit()
 	{
+		// 처리해야할 task 개수
 		tasksRemaining = nodes.size();
 
+		// 초기 task 추가
 		for (int i = 0; i < nodes.size(); ++i)
 		{
 			if (nodes[i].inDegree == 0) ready_queue.push(i);
@@ -135,6 +170,7 @@ static unsigned __stdcall TaskProcessing(void* param)
 
 	while (true)
 	{
+		// 남은 task 개수가 0개인지 원자적 연산을 통해 확인
 		// task가 모두 처리되어있다면 다른 스레드를 깨우고 종료
 		if (InterlockedCompareExchange(&taskGraph->tasksRemaining, 0, 0) == 0)
 		{
@@ -142,9 +178,10 @@ static unsigned __stdcall TaskProcessing(void* param)
 			break;
 		}
 
-		// 데이터 생산 이벤트가 발생할때까지 대기
+		// 큐 데이터 생산 이벤트가 발생할때까지 대기
 		WaitForSingleObject(taskEvent, INFINITE);
 
+		// 남은 task 개수가 0개인지 원자적 연산을 통해 확인
 		// 깨어났을때 task가 모두 처리되어있다면 다른 스레드를 깨우고 종료
 		if (InterlockedCompareExchange(&taskGraph->tasksRemaining, 0, 0) == 0)
 		{
@@ -152,7 +189,9 @@ static unsigned __stdcall TaskProcessing(void* param)
 			break;
 		}
 
-		// [소비] 큐에서 task 추출
+		// [소비] task 추출을 위해 큐에 접근 - 임계구역
+		// 만약 큐가 비어있다면 이벤트를 비활성화하고 continue
+		// 데이터가 있다면 큐에서 task 추출
 		EnterCriticalSection(&cs);
 		if (taskGraph->ready_queue.empty()) {
 			ResetEvent(taskEvent);
@@ -164,15 +203,17 @@ static unsigned __stdcall TaskProcessing(void* param)
 		LeaveCriticalSection(&cs);
 
 		// Task 실행
+		// Interlocked 함수를 통해 원자적 연산으로 남은 task 개수 감소
 		taskGraph->nodes[nodeIndex].task();
 		InterlockedDecrement(&taskGraph->tasksRemaining);
 
 		// 후속 노드 처리
+		// Interlocked 함수를 통해 원자적 연산으로 후속 노드의 진입 차수 감소
 		for (int nextIndex : taskGraph->nodes[nodeIndex].next) {
-			// 진입 차수 원자적 감소
 			LONG newInDegree = InterlockedDecrement(&taskGraph->nodes[nextIndex].inDegree);
 
-			// [생산] 의존성이 없는 task 큐에 추가
+			// [생산] task 추가를 위해 큐에 접근 - 임계구역
+			// 의존성이 없는 task 큐에 추가
 			if (newInDegree == 0)
 			{
 				EnterCriticalSection(&cs);
