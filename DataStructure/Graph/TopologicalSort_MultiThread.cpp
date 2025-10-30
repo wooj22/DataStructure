@@ -166,32 +166,23 @@ static unsigned __stdcall TaskProcessing(void* param)
 {
 	ThreadData* threadData = static_cast<ThreadData*>(param);
 	TaskGraph* taskGraph = threadData->taskGraph;
-	std::cout << threadData->threadId << "번 스레드 시작.\n";
+	std::cout << threadData->threadId << "번 스레드 시작\n";
 
 	while (true)
 	{
-		// 남은 task 개수가 0개인지 원자적 연산을 통해 확인
-		// task가 모두 처리되어있다면 다른 스레드를 깨우고 종료
+		// [종료] task가 모두 처리되어있다면 다른 스레드를 깨우고 종료
 		if (InterlockedCompareExchange(&taskGraph->tasksRemaining, 0, 0) == 0)
 		{
 			SetEvent(taskEvent);
 			break;
 		}
 
-		// 큐 데이터 생산 이벤트가 발생할때까지 대기
+		// [대기] 큐 데이터 생산 이벤트가 발생할때까지 대기
 		WaitForSingleObject(taskEvent, INFINITE);
 
-		// 남은 task 개수가 0개인지 원자적 연산을 통해 확인
-		// 깨어났을때 task가 모두 처리되어있다면 다른 스레드를 깨우고 종료
-		if (InterlockedCompareExchange(&taskGraph->tasksRemaining, 0, 0) == 0)
-		{
-			SetEvent(taskEvent);
-			break;
-		}
-
-		// [소비] task 추출을 위해 큐에 접근 - 임계구역
-		// 만약 큐가 비어있다면 이벤트를 비활성화하고 continue
-		// 데이터가 있다면 큐에서 task 추출
+		// [소비]
+		// 큐가 비어있다면 다른 스레드들을 대기시키고 continue
+		// 큐에 데이터가 있다면 Task를 추출
 		EnterCriticalSection(&cs);
 		if (taskGraph->ready_queue.empty()) {
 			ResetEvent(taskEvent);
@@ -208,11 +199,11 @@ static unsigned __stdcall TaskProcessing(void* param)
 		InterlockedDecrement(&taskGraph->tasksRemaining);
 
 		// 후속 노드 처리
-		// Interlocked 함수를 통해 원자적 연산으로 후속 노드의 진입 차수 감소
 		for (int nextIndex : taskGraph->nodes[nodeIndex].next) {
+			// Interlocked 함수를 통해 원자적 연산으로 후속 노드의 진입 차수 감소
 			LONG newInDegree = InterlockedDecrement(&taskGraph->nodes[nextIndex].inDegree);
 
-			// [생산] task 추가를 위해 큐에 접근 - 임계구역
+			// [생산]
 			// 의존성이 없는 task 큐에 추가
 			if (newInDegree == 0)
 			{
@@ -224,7 +215,7 @@ static unsigned __stdcall TaskProcessing(void* param)
 		}
 	}
 
-	std::cout << threadData->threadId << "번 스레드 종료.\n";
+	std::cout << threadData->threadId << "번 스레드 종료\n";
 	return 0;
 }
 
@@ -239,7 +230,7 @@ void SingleRun(TaskGraph* taskGraph)
 
 int MultiRun(TaskGraph* taskGraph)
 {
-	cout << "5개 작업을 3개의 스레드로 위상 정렬하여 처리합니다." << endl;
+	cout << "5개 작업을 3개의 스레드로 위상 정렬하여 처리합니다" << endl;
 
 	// critical section
 	InitializeCriticalSection(&cs);
@@ -279,7 +270,7 @@ int MultiRun(TaskGraph* taskGraph)
 
 	// 모든 스레드가 종료될때까지 대기
 	WaitForMultipleObjects(3, hThreads, TRUE, INFINITE);
-	std::cout << "모든 Task 처리 완료." << endl;
+	std::cout << "모든 Task 처리 완료" << endl;
 
 	// 스레드, 동기화 도구 정리
 	for (int i = 0; i < 3; i++) CloseHandle(hThreads[i]);
@@ -294,24 +285,20 @@ int main()
 	TaskGraph taskGraph;
 
 	// add tase(node)
-	int t1 = taskGraph.AddTask([]() { Sleep(1000); std::cout << "Task1 End\n"; });
-	int t2 = taskGraph.AddTask([]() { Sleep(1000); std::cout << "Task2 End\n"; });
-	int t3 = taskGraph.AddTask([]() { Sleep(1000); std::cout << "Task3 End\n"; });
-	int t4 = taskGraph.AddTask([]() { Sleep(1000); std::cout << "Task4 End\n"; });
-	int t5 = taskGraph.AddTask([]() { Sleep(1000); std::cout << "Task5 End\n"; });
+	int t1 = taskGraph.AddTask([]() { Sleep(1000); std::cout << "Task1 처리 완료\n"; });
+	int t2 = taskGraph.AddTask([]() { Sleep(1000); std::cout << "Task2 처리 완료\n"; });
+	int t3 = taskGraph.AddTask([]() { Sleep(1000); std::cout << "Task3 처리 완료\n"; });
+	int t4 = taskGraph.AddTask([]() { Sleep(1000); std::cout << "Task4 처리 완료\n"; });
+	int t5 = taskGraph.AddTask([]() { Sleep(1000); std::cout << "Task5 처리 완료\n"; });
 
 	/* add depends(egde)
 	   가능한 위상정렬 순서
-		t2 → t1 → t4 → t3 → t5
-		t2 → t4 → t3 → t1 → t5
-		t2 → t4 → t1 → t3 → t5
-		t2 → t1 → t4 → t3 → t5
+		t1, t2, t3 → t4 → t5
 	*/
-	taskGraph.AddDependency(t2, t1); 
-	taskGraph.AddDependency(t4, t3); 
-	taskGraph.AddDependency(t1, t5); 
-	taskGraph.AddDependency(t3, t5); 
+	taskGraph.AddDependency(t1, t4); 
 	taskGraph.AddDependency(t2, t4); 
+	taskGraph.AddDependency(t3, t4); 
+	taskGraph.AddDependency(t4, t5); 
 
 
 	// 1. 단일 스레드 작업 스케줄링
