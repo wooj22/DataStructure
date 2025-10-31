@@ -15,7 +15,7 @@ using namespace std;
 #define MAX 10
 
 // Map
-enum MAZETYPE { PATH, WALL, GOAL };
+enum MAZETYPE { PATH, WALL };
 int Maze[MAX][MAX] = {
 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
 {1, 0, 0, 0, 1, 0, 1, 1, 0, 1},
@@ -24,7 +24,7 @@ int Maze[MAX][MAX] = {
 {1, 0, 1, 1, 0, 0, 0, 0, 0, 1},
 {1, 0, 0, 0, 0, 0, 1, 1, 1, 1},
 {1, 0, 1, 1, 1, 0, 0, 0, 0, 1},
-{1, 0, 1, 1, 1, 1, 2, 1, 0, 1},
+{1, 0, 1, 1, 1, 1, 1, 1, 0, 1},
 {1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 {1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
 };
@@ -135,6 +135,9 @@ struct Graph {
             int vertexIndex = currentVertex.second;   // 정점 번호
             int curFDist = currentVertex.first;       // 누적거리 + 예상 거리
 
+            // 목표 노드 도착시 종료
+            if (vertexIndex == goalNodeIndex) break;
+
             // (2) 꺼낸 정점이 이미 기록된것보다 오래걸린다면 무시
             if (curFDist - HeuristicManhattanDistance(vertexIndex, goalNodeIndex) > dist[vertexIndex]) continue;
 
@@ -226,9 +229,10 @@ void MakeGraphFormMaze(Graph& graph)
 
 int main() {
     Graph graph;
-
     MakeGraphFormMaze(graph);
     graph.PrintGraphNodeAndEdge();
+
+	// A* 알고리즘 실행 (시작노드 index, 도착노드 index)
     graph.Astar(1, graph.GetNodeCount());
 
     return 0;
